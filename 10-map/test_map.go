@@ -2,7 +2,7 @@ package main
 
 import "fmt"
 
-func main(){
+func map_declare(){
 	// 声明myMap是一种map类型，key是string ，value 是string
 	var myMap map[string]string
 	if myMap == nil {
@@ -36,4 +36,42 @@ func main(){
 	
 	fmt.Println(myMap3)
 
+}
+
+func printMap(myMap map[string]string){
+	// myMap 是一个引用传递
+	for key, value := range myMap {
+		fmt.Println("key = ", key)
+		fmt.Println("value = ", value)
+	}
+}
+
+func changeValue(myMap map[string]string){
+	myMap["England"] = "London"
+}
+
+func map_use(){
+	citeMape := make(map[string]string)
+
+	// 添加
+	citeMape["China"] = "Beijing"
+	citeMape["Japan"] = "Tokyo"
+	citeMape["USA"] = "NewYork"
+	
+	// 遍历
+	printMap(citeMape)
+
+	// 删除
+	delete(citeMape, "China")
+	fmt.Println("----------------")
+
+	// 修改
+	citeMape["USA"] = "DC"
+	changeValue(citeMape)
+	// 遍历
+	printMap(citeMape)
+}
+
+func main(){
+	map_use()
 }
