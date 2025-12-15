@@ -69,4 +69,34 @@ func main() {
 	}
 
 	fmt.Println("Main Finished.")
+
+
+	// 使用select
+
+	c4 := make(chan int)
+	quit := make(chan int)
+
+	go func ()  {
+		for i:=0;i<6; i++{
+			fmt.Println(<-c4)
+		}
+
+		quit <- 0
+	}()
+
+	fibonacci(c4,quit)
+	 
+}
+
+func fibonacci(c, quit chan int) {
+    x, y := 0, 1  // 从 F(0)=0, F(1)=1 开始
+    for {
+        select {
+        case c <- x:       // 先发送当前值 x
+            x, y = y, x+y  // 再更新：新 x = 旧 y，新 y = 旧 x + 旧 y
+        case <-quit:
+            fmt.Println("quit")
+            return
+        }
+    }
 }
