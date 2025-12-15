@@ -39,4 +39,34 @@ func main() {
 	}
 	time.Sleep(2 *time.Second)
 	fmt.Print("main 结束")
+
+
+	c3 := make(chan int)
+	go func(){
+		for i := 0; i<5; i++{
+			c3 <- i
+		}
+		// close 可以关闭一个channel
+		close(c3)
+	}()
+
+	// for {
+	// 	// ok 如果为true表示channel没有关闭，如果为false表示channel已经关闭
+	// 	if data, ok := <-c3; ok{
+	// 		fmt.Println(data)
+	// 	} else {
+	// 		break
+	// 	}
+	// }
+
+	
+
+
+
+	// 可以使用range来迭代不断操作channel
+	for data:= range c3{
+		fmt.Println(data)
+	}
+
+	fmt.Println("Main Finished.")
 }
