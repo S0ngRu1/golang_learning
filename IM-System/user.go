@@ -1,6 +1,9 @@
 package main
 
-import "net"
+import (
+	"net"
+	"strings"
+)
 
 type User struct {
 	Name   string
@@ -48,9 +51,40 @@ func (u *User) Offline() {
 	u.server.BroadCast(u.Addr, u.Name+": is offline \n")
 }
 
+func (u *User) SendMsg(msg string) {
+	u.conn.Write([]byte(msg))
+}
+
 // 用户处理消息的业务
 func (u *User) DoMessage(msg string) {
-	u.server.BroadCast(u.Addr, msg)
+	if msg == "who" {
+		// 查询当前在线用户都有哪些
+		u.server.mapLock.Lock()
+		for _, user := range u.server.OnlineMap {
+			onlineMsg := "[" + user.Addr + "]" + user.Name + ":" + "is online...\n"
+			u.SendMsg(onlineMsg)
+		}
+		u.server.mapLock.Unlock()
+
+	} else if len(msg) > 7 && msg[:7] == "rename|" {
+		// 消息格式: rename|zhangsan
+		newName := strings.Split(msg, "|")[1]
+		// 判断name是否存在
+		_, ok := u.server.OnlineMap[newName]
+		if ok {
+			u.SendMsg("The current username is in use\n")
+		} else {
+			u.server.mapLock.Lock()
+			delete(u.server.OnlineMap, u.Name)
+			u.server.OnlineMap[newName] = u
+			u.server.mapLock.Unlock()
+			u.Name = newName
+			u.SendMsg("You have updated your username:" + u.Name + "\n")
+		}
+
+	} else {
+		u.server.BroadCast(u.Addr, msg)
+	}
 }
 
 // 监听当前User  channel 的方法，一旦有消息，就直接发送客户端
