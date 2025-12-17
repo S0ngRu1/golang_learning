@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"net"
+	"strings"
 	"sync"
 	"time"
 )
@@ -63,20 +66,26 @@ func (s *Server) BroadCast(senderAddr, content string) {
 
 // 当前的链接业务
 func (s *Server) Handler(conn net.Conn) {
-	// defer conn.Close()
-	// reader := bufio.NewReader(conn)
-	// msg, _ := reader.ReadString('\n')
-	// fmt.Fprintf(conn, "Got your message: %s", msg) // 必须写回！
-	user := NewUser(conn)
-
-	// 用户上线，将用户加入到OnlineMap中
-	s.mapLock.Lock()
-	s.OnlineMap[user.Name] = user
-	s.mapLock.Unlock()
-
-	// 广播当前用户的上线消息
-	s.BroadCast(user.Addr, user.Name+": is online \n")
-
+	user := NewUser(conn, s)
+	user.Online()
+	// 接收客户端发送的消息
+	go func() {
+    reader := bufio.NewReader(conn)
+    for {
+        msg, err := reader.ReadString('\n')
+        if err != nil {
+            if err != io.EOF {
+                fmt.Println("Read error:", err)
+            }
+            user.Offline()
+            return
+        }
+			// 去除 \r\n 或 \n
+			msg = strings.TrimSpace(msg)
+			// 用户将消息进行广播
+			user.DoMessage(msg)
+		}
+	}()
 }
 
 // 启动服务器的接口
