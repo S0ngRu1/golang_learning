@@ -68,6 +68,7 @@ func (s *Server) BroadCast(senderAddr, content string) {
 func (s *Server) Handler(conn net.Conn) {
 	user := NewUser(conn, s)
 	user.Online()
+	isLive := make(chan bool)
 	// 接收客户端发送的消息
 	go func() {
     reader := bufio.NewReader(conn)
@@ -84,8 +85,30 @@ func (s *Server) Handler(conn net.Conn) {
 			msg = strings.TrimSpace(msg)
 			// 用户将消息进行广播
 			user.DoMessage(msg)
+			// 用户的任意消息，代表当前用户是活跃的
+			isLive <- true
 		}
 	}()
+
+	// 当前handler阻塞
+	for {
+		select{
+		case <- isLive:
+			// 当前用户是活跃的，应该重置定时器
+		case <- time.After(time.Second * 10):
+			// 已经超时
+			// 将当前的User 强制的关闭
+			user.SendMsg("you are out!")
+			// 销毁资源
+			close(user.C)
+			// 关闭连接
+			conn.Close()
+
+			// 退出当前的Handler
+			return
+		}
+		
+	}
 }
 
 // 启动服务器的接口
